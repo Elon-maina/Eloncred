@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Admin - Add Products</title>
+	<link rel="stylesheet" href="../styles.css">
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="admin.css">
+	<style>
+		.tabs { display:flex; gap:8px; align-items:center; margin:18px 0; }
+		.tab-btn { padding:8px 14px; border-radius:6px; border:1px solid #ddd; background:#fff; cursor:pointer; }
+		.tab-btn.active { background:#9370DB; color:#fff; border-color:#9370DB; }
+		.section-hidden { display:none; }
+	</style>
+</head>
+<body>
+
+	<main style="padding:30px 20px 40px;max-width:980px;margin:0 auto;">
+		<div class="tabs">
+			<button id="tabAdd" class="tab-btn active">Add Product</button>
+			<button id="tabExisting" class="tab-btn">Existing Items</button>
+		</div>
+
+		<section id="addSection">
+			<h2>Add Product</h2>
+
+			<form id="adminForm">
+			<div class="form-group">
+				<label for="pname">Product Name</label>
+				<input id="pname" name="name" required>
+			</div>
+
+			<div class="form-group">
+				<label for="pprice">Price</label>
+				<input id="pprice" name="price" required>
+			</div>
+
+			<div class="form-group">
+				<label for="pcategory">Category</label>
+				<select id="pcategory" name="category" required>
+					<option value="foodstuffs">Foodstuffs</option>
+					<option value="babystuff">Baby Stuff</option>
+					<option value="footwear">Footwear</option>
+					<option value="bicycles">Bicycles</option>
+					<option value="books">Books</option>
+				</select>
+			</div>
+
+			<div class="form-group">
+    <label for="pimage">Image Upload</label>
+			<div style="display:flex;gap:12px;align-items:center;">
+				<input type="file" id="pimage" name="image" accept="image/*">
+				<div id="pimagePreview" class="image-preview" aria-hidden="true" title="Image preview"></div>
+			</div>
+</div>
+
+	            <div class="form-group">
+	                <label for="pqty">Quantity</label>
+	                <input id="pqty" name="quantity" type="number" min="1" value="1">
+	            </div>
+
+			<button class="btn btn-primary" type="submit">Add Item</button>
+			</form>
+
+			<div id="adminMessage" class="message" style="display:none;margin-top:12px;"></div>
+		</section>
+
+		<section id="existingSection" class="section-hidden">
+			<div style="display:flex;justify-content:space-between;align-items:center;margin-top:0;">
+				<h2 style="margin:0;">Existing Items</h2>
+				<div>
+					<button id="clearLocalBtn" class="btn" style="margin-left:8px;">Clear Local</button>
+				</div>
+			</div>
+			<div id="adminList"></div>
+		</section>
+	</main>
+
+	<script src="../script.js"></script>
+	<!-- SweetAlert2 for nicer alerts -->
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+	<script src="admin.js"></script>
+
+	<script>
+	// ensure admin session before showing admin product UI
+	(async function ensureAdminProduct(){
+		try{
+			const session = JSON.parse(localStorage.getItem('eloncred_session')||'null');
+			const token = session && session.token ? session.token : null;
+			const headers = {};
+			if (token) headers['Authorization'] = `Bearer ${token}`;
+			const resp = await fetch('/api/admin/check', { headers, credentials: 'include' });
+			const data = await resp.json();
+			if (!data.success) throw new Error('Not admin');
+		} catch (err) {
+			console.warn('Admin check failed for productsadmin, redirecting', err);
+			window.location.href = 'adminlogin.html';
+		}
+	})();
+	</script>
+
+	<script>
+		// Tab switching for Add / Existing
+		document.addEventListener('DOMContentLoaded', function(){
+			const tabAdd = document.getElementById('tabAdd');
+			const tabExisting = document.getElementById('tabExisting');
+			const addSection = document.getElementById('addSection');
+			const existingSection = document.getElementById('existingSection');
+
+			function showAdd(){
+				tabAdd.classList.add('active'); tabExisting.classList.remove('active');
+				addSection.classList.remove('section-hidden'); existingSection.classList.add('section-hidden');
+			}
+			function showExisting(){
+				tabExisting.classList.add('active'); tabAdd.classList.remove('active');
+				existingSection.classList.remove('section-hidden'); addSection.classList.add('section-hidden');
+			}
+
+			tabAdd.addEventListener('click', showAdd);
+			tabExisting.addEventListener('click', showExisting);
+
+			// default
+			showAdd();
+		});
+	</script>
+</body>
+</html>

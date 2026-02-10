@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ElonCred - Redefining Digital Credit</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header & Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="images/ElonCredi.png" alt="ElonCred Logo" class="logo-img">
+                <span>ELonCred</span>
+            </div>
+            <div class="nav-menu">
+                <!-- Search -->
+                <div class="nav-search nav-link">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="searchInput" placeholder="Search products..." class="search-input">
+                </div>
+
+                </div>
+                <!-- Cart -->
+                <div class="nav-cart nav-link" id="navCart">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart-count" id="cartCount">0</span>
+                    <div class="cart-dropdown" id="cartDropdown">
+                        <div class="cart-items" id="cartItems"></div>
+                        <div class="cart-footer">
+                            <div class="cart-total" id="cartTotal">Total: 0</div>
+                            <button class="btn btn-primary btn-checkout" id="checkoutBtn">Clear Cart</button><br>
+                            <button class="btn btn-payment" id="paymentBtn">Make payment</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="header-items">
+              <a href="home.html" class="nav-link"><i class="fas fa-home"></i> Home</a>
+                <a href="home.html" class="nav-link"><i class="fas fa-shopping-bag"></i> Products</a>
+                <a href="about.html" class="nav-link active"><i class="fas fa-info-circle"></i> About</a>
+                <a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact Us</a>
+            </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container hero-content">
+            <h1 class="fade-in">About <span class="brand">ELonCred</span></h1>
+            <p class="fade-in delay-1">Discover premium products and exclusive deals. Shop with confidence and style.</p>
+            <div class="hero-buttons fade-in delay-2">
+                <a href="#origin" class="btn btn-primary">Our Story</a>
+                <a href="#apart" class="btn btn-secondary">What Sets Us Apart</a>
+            </div>
+        </div>
+        <div class="hero-image">
+            <i class="fas fa-store hero-icon"></i>
+        </div>
+    </section>
+
+    <!-- Our Origin Section -->
+    <section id="origin" class="products-section">
+        <div class="container">
+            <h2 class="section-title">Our Origin</h2>
+            <div class="origin-content">
+                <div class="origin-text fade-in">
+                    <h3>From Vision to Reality</h3>
+                    <p>ELonCred was founded with a simple mission: to provide premium products that enhance everyday living. We believe that quality shopping should be accessible, enjoyable, and trustworthy.</p>
+                    <p>Our journey began with a passion for curating the best products from around the world. We've built relationships with trusted suppliers and manufacturers to ensure every item in our shop meets our high standards.</p>
+                    <p>Today, ELonCred serves customers worldwide, offering a carefully selected range of products across multiple categories including food, baby items, footwear, bicycles, and books.</p>
+                </div>
+                <div class="origin-image fade-in delay-1">
+                    <div class="image-placeholder">
+                        <i class="fas fa-lightbulb"></i>
+                        <h3>The Genesis of ELonCred</h3>
+                        <p>Our vision for premium shopping</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- What Sets Us Apart Section -->
+    <section id="apart" class="products-section" style="background-color: rgba(147, 112, 219, 0.05);">
+        <div class="container">
+            <h2 class="section-title">What Sets Us Apart</h2>
+            <p style="text-align: center; max-width: 800px; margin: 0 auto 40px; font-size: 1.1rem; color: var(--text-light);">ELonCred introduces groundbreaking features that redefine what's possible in premium shopping. Our platform is designed with the customer's satisfaction as the top priority.</p>
+
+            <div class="features">
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <h3>Premium Quality</h3>
+                    <p>We carefully select only the highest quality products from trusted manufacturers and suppliers worldwide.</p>
+                </div>
+
+                <div class="feature-card highlight-feature fade-in delay-1">
+                    <div class="feature-icon">
+                        <i class="fas fa-truck"></i>
+                    </div>
+                    <h3>Fast Delivery</h3>
+                    <p>Quick and reliable shipping to get your orders to you as fast as possible with real-time tracking.</p>
+                </div>
+
+                <div class="feature-card fade-in delay-2">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>Secure Shopping</h3>
+                    <p>Safe and secure checkout process with multiple payment options like overdraw and buyer protection guarantee.</p>
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-item fade-in">
+                    <div class="stat-number" id="stat1">0</div>
+                    <div class="stat-label">Happy Customers</div>
+                </div>
+                <div class="stat-item fade-in delay-1">
+                    <div class="stat-number" id="stat2">0</div>
+                    <div class="stat-label">Products Available</div>
+                </div>
+                <div class="stat-item fade-in delay-2">
+                    <div class="stat-number" id="stat3">99.7%</div>
+                    <div class="stat-label">Satisfaction Rate</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Our Vision Section -->
+    <section id="vision" class="products-section">
+        <div class="container">
+            <h2 class="section-title">Our Vision</h2>
+            <div class="vision-content">
+                <div class="vision-statement fade-in">
+                    "To create a world where premium shopping is accessible to everyone, offering quality products that enhance daily life."
+                </div>
+
+                <div class="vision-details">
+                    <div class="vision-item fade-in">
+                        <h4>Quality First</h4>
+                        <p>We are committed to offering only the highest quality products, carefully selected from trusted suppliers worldwide.</p>
+                    </div>
+
+                    <div class="vision-item fade-in delay-1">
+                        <h4>Customer Satisfaction</h4>
+                        <p>Our customers' happiness and satisfaction drive everything we do, from product selection to customer service.</p>
+                    </div>
+
+                    <div class="vision-item fade-in delay-2">
+                        <h4>Innovation</h4>
+                        <p>We continuously innovate our platform and services to provide the best shopping experience possible.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-column">
+                    <div class="footer-logo">
+                        <img src="images/ElonCredi.png" alt="ElonCred Logo" class="logo-img">
+                        <span>ELonCred</span>
+                    </div>
+                    <p>Discover premium products and exclusive deals. Shop with confidence and style.</p>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+
+                <div class="footer-column">
+                    <h3>Quick Links</h3>
+                    <ul class="footer-links">
+                        <li><a href="#origin">Our Origin</a></li>
+                        <li><a href="#apart">What Sets Us Apart</a></li>
+                        <li><a href="#vision">Our Vision</a></li>
+                        <li><a href="home.html">Shop Now</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-column">
+                    <h3>Contact Info</h3>
+                    <ul class="footer-links">
+                        <li><i class="fas fa-envelope"></i> info@eloncred.com</li>
+                        <li><i class="fas fa-phone"></i> +254 746 848 928</li>
+                        <li><i class="fas fa-map-marker-alt"></i> Worldwide</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="copyright">
+                <p>&copy; 2026 ELonCred. All rights reserved. | Thank you for visiting us!</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Animation for stats counter
+        function animateCounter(id, start, end, duration) {
+            let obj = document.getElementById(id);
+            let startTime = null;
+            
+            function step(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                const value = Math.floor(progress * (end - start) + start);
+                obj.innerHTML = value.toLocaleString() + (id === 'stat3' ? '%' : '+');
+                
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            }
+            
+            window.requestAnimationFrame(step);
+        }
+        
+        // Trigger animation when stats come into view
+        function onScroll() {
+            const statsSection = document.querySelector('.stats');
+            if (!statsSection) return;
+            
+            const sectionPosition = statsSection.getBoundingClientRect().top;
+            const screenPosition = window.innerHeight / 1.3;
+            
+            if (sectionPosition < screenPosition) {
+                animateCounter('stat1', 0, 10000, 2000);
+                animateCounter('stat2', 0, 5000, 2000);
+                // stat3 doesn't need animation as it's a percentage
+                window.removeEventListener('scroll', onScroll);
+            }
+        }
+        
+        window.addEventListener('scroll', onScroll);
+        
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const targetId = this.getAttribute('href');
+                if(targetId === '#') return;
+                
+                const targetElement = document.querySelector(targetId);
+                if(targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+        
+        // Fade-in animation on scroll
+        function checkFade() {
+            const fadeElements = document.querySelectorAll('.fade-in');
+            
+            fadeElements.forEach(element => {
+                const elementTop = element.getBoundingClientRect().top;
+                const elementVisible = 150;
+                
+                if (elementTop < window.innerHeight - elementVisible) {
+                    element.classList.add('active');
+                }
+            });
+        }
+        
+        window.addEventListener('scroll', checkFade);
+        window.addEventListener('load', checkFade);
+        
+        // Initialize elements with active class if already in view
+        document.addEventListener('DOMContentLoaded', function() {
+            // Trigger initial fade check
+            checkFade();
+            
+            // Add active class to first few elements that should be visible immediately
+            const initialFades = document.querySelectorAll('.hero .fade-in');
+            initialFades.forEach(el => {
+                el.classList.add('active');
+            });
+        });
+    </script>
+    <script src="scriptx.js"></script>
+</body>
+</html>
