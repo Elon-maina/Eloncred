@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELonCred - Premium Online Shop</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="images/ElonCredi.png" alt="ElonCred Logo" class="logo-img">
+                <span>ELonCred</span>
+            </div>
+            <div class="nav-menu">
+                <!-- Search -->
+                <div class="nav-search nav-link">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="searchInput" placeholder="Search products..." class="search-input">
+                </div>
+                <!-- Accounts dropdown -->
+                <div class="nav-account nav-link">
+                    <i class="fas fa-user-circle"></i>
+                    <span class="account-label">Accounts</span>
+                    <div class="account-dropdown">
+                        <a href="login.html">Sign In</a>
+                        <a href="signup.html">Sign Up</a>
+                    </div>
+                </div>
+                <!-- Cart -->
+                <div class="nav-cart nav-link" id="navCart">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart-count" id="cartCount">0</span>
+                    <div class="cart-dropdown" id="cartDropdown">
+                        <div class="cart-items" id="cartItems"></div>
+                        <div class="cart-footer">
+                            <div class="cart-total" id="cartTotal">Total: 0</div>
+                            <button class="btn btn-primary btn-checkout" id="checkoutBtn">Clear Cart</button><br>
+                            <button class="btn btn-payment" id="paymentBtn">Make payment</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="header-items">
+              <a href="home.html" class="nav-link active"><i class="fas fa-home"></i> Home</a>
+                <a href="#products" class="nav-link"><i class="fas fa-shopping-bag"></i> Products</a>
+                <a href="about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a>
+                <a href="contact.html" class="nav-link"><i class="fas fa-phone"></i> Contact Us</a>
+            </div>
+    </nav>
+<section class="carousel" aria-label="Homepage carousel">
+  <div class="carousel-inner">
+
+    <div class="slide active" style="--bg-color: #f5e1da;">
+      <div class="slide-content">
+        <h2>Welcome to <span class="brand">ELonCred</span></h2>
+        <p class="lead">Discover premium products and exclusive deals. Shop with confidence and style.</p>
+      </div>
+      <div class="slide-image">
+        <img src="images/1.jpg" alt="ElonCred Welcome Image" />
+      </div>
+    </div>
+
+    <div class="slide" style="--bg-color: #d1f0ff;">
+      <div class="slide-content">
+        <h2>Our Mission</h2>
+        <p class="lead">To provide curated, high-quality products that elevate everyday living.</p>
+      </div>
+      <div class="slide-image">
+        <img src="images/2.jpg" alt="Mission Image" />
+      </div>
+    </div>
+
+    <div class="slide" style="--bg-color: #e6f8d5;">
+      <div class="slide-content">
+        <h2>Our Vision</h2>
+        <p class="lead">To be the destination for discerning shoppers who value quality and trust.</p>
+      </div>
+      <div class="slide-image">
+        <img src="images/3.jpg" alt="Vision Image" />
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+        <button class="carousel-control prev" aria-label="Previous slide">&#10094;</button>
+        <button class="carousel-control next" aria-label="Next slide">&#10095;</button>
+        <div class="carousel-dots"></div>
+    </section>
+
+    <section id="products" class="products-section">
+        <h2>Featured Products</h2>
+
+        <div class="category" data-category="foodstuffs">
+            <h3>Foodstuffs</h3>
+            <div class="products-grid" id="cat-foodstuffs"></div>
+        </div>
+
+        <div class="category" data-category="babystuff">
+            <h3>Baby Stuff</h3>
+            <div class="products-grid" id="cat-babystuff"></div>
+        </div>
+
+        <div class="category" data-category="footwear">
+            <h3>Footwear</h3>
+            <div class="products-grid" id="cat-footwear"></div>
+        </div>
+
+        <div class="category" data-category="bicycles">
+            <h3>Bicycles</h3>
+            <div class="products-grid" id="cat-bicycles"></div>
+        </div>
+
+        <div class="category" data-category="books">
+            <h3>Books</h3>
+            <div class="products-grid" id="cat-books"></div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <p>&copy; 2026 ELonCred. All rights reserved.</p>
+        <p>Thankyou for visiting us! </p>
+    </footer>
+<script>
+        const slides = document.querySelectorAll('.slide');
+    const nextButton = document.querySelector('.next');
+    const prevButton = document.querySelector('.prev');
+
+    let currentIndex = 0;
+
+    function updateCarousel() {
+        const totalSlides = slides.length;
+        const innerCarousel = document.querySelector('.carousel-inner');
+
+        // Adjust the transform property to change slides
+        innerCarousel.style.transform = `translateX(-${currentIndex * 100}%)`;
+        
+        // Update active class
+        slides.forEach((slide, index) => {
+            slide.classList.toggle('active', index === currentIndex);
+        });
+    }
+
+    nextButton.addEventListener('click', () => {
+        currentIndex = (currentIndex + 1) % slides.length;
+        updateCarousel();
+    });
+
+    prevButton.addEventListener('click', () => {
+        currentIndex = (currentIndex - 1 + slides.length) % slides.length;
+        updateCarousel();
+    });
+</script>
+    <script src="scriptx.js"></script>
+</body>
+</html>

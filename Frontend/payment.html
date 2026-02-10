@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Make Payment - ELonCred</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="images/ElonCredi.png" alt="ElonCred Logo" class="logo-img">
+                <span>ELonCred</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="payment-page">
+        <section class="payment-card">
+            <h2>Complete your order</h2>
+
+            <div class="payment-grid">
+
+                <form id="checkoutForm" class="checkout-form">
+                    <h3>Shipping & contact</h3>
+
+                    <div class="form-group inline">
+                        <label for="fullName">Full name</label>
+                        <input id="fullName" name="fullName" required>
+                    </div>
+
+                    <div class="form-group inline">
+                        <label for="email">Email</label>
+                        <input id="email" name="email" type="email" required>
+                    </div>
+
+                    <div class="form-group inline">
+                        <label for="phone">Phone</label>
+                        <input id="phone" name="phone" required>
+                    </div>
+
+                    <div class="form-group inline">
+                        <label for="address">Address</label>
+                        <input id="address" name="address" required>
+                    </div>
+
+                    <h3>Payment method</h3>
+
+                    <div class="payment-options">
+                        <label class="payment-option">
+                            <input type="radio" name="paymentMethod" value="credit" checked>
+                            <span class="square" aria-hidden="true"></span>
+                            <span class="option-label">Credit / Debit Card</span>
+                        </label>
+
+                        <label class="payment-option">
+                            <input type="radio" name="paymentMethod" value="mpesa">
+                            <span class="square" aria-hidden="true"></span>
+                            <span class="option-label">M-Pesa</span>
+                        </label>
+
+                        <label class="payment-option">
+                            <input type="radio" name="paymentMethod" value="balance">
+                            <span class="square" aria-hidden="true"></span>
+                            <span class="option-label">ElonCred balance</span>
+                        </label>
+                    </div>
+
+                    <div id="cardFields">
+                        <div class="form-group">
+                            <label for="ccNumber">Card number</label>
+                            <input id="ccNumber" name="ccNumber" inputmode="numeric" maxlength="19" placeholder="4242 4242 4242 4242">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group small">
+                                <label for="ccExp">Expiry</label>
+                                <input id="ccExp" name="ccExp" placeholder="MM/YY">
+                            </div>
+                            <div class="form-group small">
+                                <label for="ccCvc">CVC</label>
+                                <input id="ccCvc" name="ccCvc" inputmode="numeric" maxlength="4" placeholder="123">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <button type="submit" class="btn btn-primary btn-full">Pay now</button>
+                    </div>
+                </form>
+
+                <aside class="order-summary">
+                    <h3>Your order</h3>
+                    <div id="summaryItems"></div>
+                    <div class="summary-total">Total: <span id="summaryTotal">0</span></div>
+                    <div style="margin-top:14px; text-align:center;">
+                        <button id="returnToCartBtn" class="btn btn-secondary">Return to cart</button>
+                    </div>
+                </aside>
+
+            </div>
+        </section>
+
+        <section id="thankYou" class="thank-you" style="display:none;">
+            <h2>Thank you!</h2>
+            <p>Your payment was successful. We've emailed your receipt.</p>
+            <a href="home.html" class="btn btn-primary">Return to shop</a>
+        </section>
+
+    </main>
+
+    <script>
+    (function(){
+        const CART_KEY = 'eloncred_cart';
+        function loadCart(){ try{ return JSON.parse(localStorage.getItem(CART_KEY))||[] }catch(e){return []} }
+        function saveCart(c){ localStorage.setItem(CART_KEY, JSON.stringify(c)); }
+
+        const cart = loadCart();
+        const summaryItems = document.getElementById('summaryItems');
+        const summaryTotal = document.getElementById('summaryTotal');
+
+        function renderSummary(){
+            summaryItems.innerHTML = '';
+            let total = 0;
+            if(!cart.length){ summaryItems.innerHTML = '<p>Your cart is empty</p>'; summaryTotal.textContent = '0'; return }
+            cart.forEach(it=>{
+                const el = document.createElement('div'); el.className='summary-item';
+                el.innerHTML = `<div class="summary-name">${escapeHtml(it.name)}</div><div class="summary-qty">x${it.qty||1}</div><div class="summary-price">${formatCurrency((it.price||0)*(it.qty||1))}</div>`;
+                summaryItems.appendChild(el);
+                total += (it.price||0)*(it.qty||1);
+            })
+            summaryTotal.textContent = formatCurrency(total);
+        }
+
+        function escapeHtml(s){ return (s+'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]}) }
+        function formatCurrency(n){ return 'KSh '+(Number(n).toFixed(2)) }
+
+        renderSummary();
+
+        // Session helper: check if user is signed in
+        function getSession(){
+            try { return JSON.parse(localStorage.getItem('eloncred_session')|| 'null'); }
+            catch(e){ return null; }
+        }
+
+    // If session exists, prefill shipping fields
+        const session = getSession();
+        if(session && session.user){
+            const u = session.user;
+            const fn = document.getElementById('fullName'); if(fn && u.name) fn.value = u.name;
+            const em = document.getElementById('email'); if(em && u.email) em.value = u.email;
+            const ph = document.getElementById('phone'); if(ph && u.phone) ph.value = u.phone || '';
+        }
+
+        // Payment method toggling
+        const paymentRadios = document.querySelectorAll('input[name="paymentMethod"]');
+        const cardFields = document.getElementById('cardFields');
+        function updatePaymentFields(){
+            const v = document.querySelector('input[name="paymentMethod"]:checked').value;
+            cardFields.style.display = (v === 'credit') ? 'block' : 'none';
+        }
+        paymentRadios.forEach(r=>r.addEventListener('change', updatePaymentFields));
+        updatePaymentFields();
+
+        // Form submit - simulate processing and clear cart on success
+        const form = document.getElementById('checkoutForm');
+        form.addEventListener('submit', function(e){
+            e.preventDefault();
+            // require session / login before allowing payment
+            if(!getSession()){
+                Swal.fire({icon:'warning', title:'Login required', text:'Please sign in to complete payment.'}).then(()=>{
+                    window.location.href = 'login.html';
+                });
+                return;
+            }
+            if(!cart.length){ Swal.fire({icon:'error', title:'Cart empty', text:'Add some items before paying.'}); return }
+            const formData = new FormData(form);
+            const name = formData.get('fullName');
+            const email = formData.get('email');
+            const phone = formData.get('phone');
+            const address = formData.get('address');
+            const method = formData.get('paymentMethod');
+            if(!name || !email || !phone || !address){ Swal.fire({icon:'error', title:'Missing details', text:'Please fill in all shipping details.'}); return }
+
+            if(method === 'credit'){
+                const cc = formData.get('ccNumber');
+                const exp = formData.get('ccExp');
+                const cvc = formData.get('ccCvc');
+                if(!cc || !exp || !cvc){ Swal.fire({icon:'error', title:'Card details', text:'Please enter card details.'}); return }
+            }
+
+            // simulate processing delay
+            Swal.fire({title:'Processing payment...', didOpen(){ Swal.showLoading() }, allowOutsideClick:false, allowEscapeKey:false});
+            setTimeout(async ()=>{
+                try {
+                    // Create order in database
+                    const session = getSession();
+                    const orderData = {
+                        user_id: session.user.id,
+                        total_amount: cart.reduce((s, i) => s + (Number(i.price) || 0) * (i.qty || 1), 0),
+                        items: cart
+                    };
+
+                    const response = await fetch('http://localhost:3000/api/orders', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${session.token}`
+                        },
+                        body: JSON.stringify(orderData)
+                    });
+
+                    const result = await response.json();
+
+                    if (!result.success) {
+                        throw new Error(result.message || 'Failed to create order');
+                    }
+
+                    Swal.close();
+                    // success flow
+                    Swal.fire({icon:'success', title:'Payment successful', text:'Thank you for your purchase!'}).then(()=>{
+                        // clear cart and redirect to thank you area on this page
+                        localStorage.removeItem(CART_KEY);
+                        document.querySelector('.payment-card').style.display='none';
+                        document.getElementById('thankYou').style.display='block';
+                    });
+                } catch (error) {
+                    console.error('Order creation failed:', error);
+                    Swal.close();
+                    Swal.fire({icon:'error', title:'Payment failed', text:'Failed to process your order. Please try again.'});
+                }
+            }, 1200);
+        })
+
+        // Return to cart button: set a flag so the home page will open the cart dropdown
+        const returnBtn = document.getElementById('returnToCartBtn');
+        if (returnBtn) {
+            returnBtn.addEventListener('click', function(e){
+                e.preventDefault();
+                try { sessionStorage.setItem('eloncred_open_cart', '1'); } catch (err) { console.error(err); }
+                // go back to home where cart can be adjusted
+                window.location.href = 'home.html';
+            });
+        }
+
+    })();
+    </script>
+    <script src="scriptx.js"></script>
+
+</body>
+
+</html>
