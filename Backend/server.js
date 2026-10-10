@@ -6,7 +6,11 @@ const path = require('path');
 const session = require("express-session");
 const dotenv = require('dotenv');
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '.env') });
+
+if (!process.env.SESSION_SECRET) {
+    throw new Error('SESSION_SECRET is required. Configure it in Backend/.env.');
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -54,7 +58,7 @@ app.use((req, res, next) => {
 const SIX_HOURS = 6 * 60 * 60 * 1000;
 app.use(session({
     name: process.env.SESSION_NAME || 'eloncred_sid',
-    secret: process.env.SESSION_SECRET || "session_secret",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     rolling: true,
