@@ -18,10 +18,10 @@ async function main() {
     const [rows] = await pool.execute('SELECT id FROM users WHERE email = ?', [email]);
     if (rows.length > 0) {
       const id = rows[0].id;
-      await pool.execute('UPDATE users SET password = ?, fullname = ?, role = ?, is_admin = ? WHERE id = ?', [hashed, fullname, 'admin', 1, id]);
+      await pool.execute('UPDATE users SET password = ?, fullname = ?, role = ? WHERE id = ?', [hashed, fullname, 'admin', id]);
       console.log(`Updated existing user id=${id} as admin (${email}).`);
     } else {
-      const [res] = await pool.execute('INSERT INTO users (fullname, email, password, role, is_admin) VALUES (?, ?, ?, ?, ?)', [fullname, email, hashed, 'admin', 1]);
+      const [res] = await pool.execute('INSERT INTO users (fullname, email, password, role) VALUES (?, ?, ?, ?)', [fullname, email, hashed, 'admin']);
       console.log(`Created admin user id=${res.insertId} (${email}).`);
     }
 

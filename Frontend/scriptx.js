@@ -145,7 +145,7 @@ async function handleLogin(e) {
     const form = new FormData(e.target);
 
     try {
-        const res = await fetch('http://localhost:3000/api/login', {
+        const res = await fetch('/api/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -216,7 +216,7 @@ if (!check.valid) {
 
 
     try {
-        const res = await fetch('http://localhost:3000/api/signup', {
+        const res = await fetch('/api/signup', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -254,7 +254,7 @@ async function performLogout() {
     const session = getSession();
     try {
         if (session && session.token) {
-            await fetch('http://localhost:3000/api/logout', {
+            await fetch('/api/logout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token: session.token })
@@ -280,7 +280,7 @@ async function performLogout() {
 
 async function fetchProducts() {
     try {
-        const res = await fetch('http://localhost:3000/api/products');
+        const res = await fetch('/api/products');
         const data = await res.json();
         return data.success ? data.products : [];
     } catch (e) {
@@ -407,7 +407,7 @@ document.addEventListener('click', e => {
 
         if (token) {
             // fetch current server cart to check if product already present
-            const cartResp = await fetch('http://localhost:3000/api/cart', {
+            const cartResp = await fetch('/api/cart', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const cartData = await cartResp.json();
@@ -416,7 +416,7 @@ document.addEventListener('click', e => {
                 cartData.cart.some(r => Number(r.product_id) === productId);
 
             // always attempt to add (backend will upsert and return updated cart)
-            const addResp = await fetch('http://localhost:3000/api/cart/add', {
+            const addResp = await fetch('/api/cart/add', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -546,10 +546,10 @@ document.addEventListener('click', async function(e) {
             const qtyEl = parent ? parent.querySelector('.qty') : null;
             const current = qtyEl ? Number(qtyEl.textContent) : 1;
             const newQty = current + 1;
-            await fetch(`http://localhost:3000/api/cart/update/${cartId}`, {
+            await fetch(`/api/cart/update/${cartId}`, {
                 method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ quantity: newQty })
             });
-            const resp = await fetch('http://localhost:3000/api/cart', { headers: { 'Authorization': `Bearer ${token}` } });
+            const resp = await fetch('/api/cart', { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await resp.json(); if (data && data.success) renderServerCart(data.cart);
         }
         if (target.matches('.qty-decrease')) {
@@ -560,17 +560,17 @@ document.addEventListener('click', async function(e) {
             const newQty = current - 1;
             if (newQty < 1) {
                 // remove instead
-                await fetch(`http://localhost:3000/api/cart/remove/${cartId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                await fetch(`/api/cart/remove/${cartId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
             } else {
-                await fetch(`http://localhost:3000/api/cart/update/${cartId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ quantity: newQty }) });
+                await fetch(`/api/cart/update/${cartId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ quantity: newQty }) });
             }
-            const resp = await fetch('http://localhost:3000/api/cart', { headers: { 'Authorization': `Bearer ${token}` } });
+            const resp = await fetch('/api/cart', { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await resp.json(); if (data && data.success) renderServerCart(data.cart);
         }
         if (target.matches('.btn-remove')) {
             const cartId = target.getAttribute('data-cart-id');
-            await fetch(`http://localhost:3000/api/cart/remove/${cartId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
-            const resp = await fetch('http://localhost:3000/api/cart', { headers: { 'Authorization': `Bearer ${token}` } });
+            await fetch(`/api/cart/remove/${cartId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+            const resp = await fetch('/api/cart', { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await resp.json(); if (data && data.success) renderServerCart(data.cart);
         }
     } catch (err) {
@@ -600,7 +600,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const session = getSession();
             const token = session && session.token ? session.token : null;
             if (!token) return;
-            const resp = await fetch('http://localhost:3000/api/cart', { headers: { 'Authorization': `Bearer ${token}` } });
+            const resp = await fetch('/api/cart', { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await resp.json();
             if (data && data.success) renderServerCart(data.cart);
         } catch (err) { console.warn('Init cart failed', err); }
@@ -661,13 +661,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (token) {
                     // fetch server cart
-                    const resp = await fetch('http://localhost:3000/api/cart', { headers: { 'Authorization': `Bearer ${token}` } });
+                    const resp = await fetch('/api/cart', { headers: { 'Authorization': `Bearer ${token}` } });
                     const data = await resp.json();
                     if (data && data.success && Array.isArray(data.cart) && data.cart.length > 0) {
                         // remove each item
                         for (const row of data.cart) {
                             try {
-                                await fetch(`http://localhost:3000/api/cart/remove/${row.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                                await fetch(`/api/cart/remove/${row.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
                             } catch (err) { console.warn('Failed to remove server cart item', row.id, err); }
                         }
                     }
@@ -698,7 +698,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (token) {
                     // fetch server cart and save to localStorage so payment.html can read it
-                    const resp = await fetch('http://localhost:3000/api/cart', { headers: { 'Authorization': `Bearer ${token}` } });
+                    const resp = await fetch('/api/cart', { headers: { 'Authorization': `Bearer ${token}` } });
                     const data = await resp.json();
                     if (data && data.success) {
                         const localCart = data.cart.map(r => ({ id: r.product_id, name: r.name, price: r.price, image: r.image || '', qty: r.quantity }));

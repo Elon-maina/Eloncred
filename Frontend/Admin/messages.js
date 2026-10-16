@@ -17,7 +17,7 @@
         const session = JSON.parse(localStorage.getItem('eloncred_session') || 'null');
         if (session && session.token) {
             try {
-                const res = await fetch('http://localhost:3000/api/messages', {
+                const res = await fetch('/api/messages', {
                     headers: { 'Authorization': `Bearer ${session.token}` }
                 });
                 return res.json().catch(()=>({ success: false, message: 'Invalid response' }));
@@ -28,7 +28,7 @@
 
         // Fallback: try cookie-based session
         try {
-            const res = await fetch('http://localhost:3000/api/messages', { credentials: 'include' });
+            const res = await fetch('/api/messages', { credentials: 'include' });
             return res.json().catch(()=>({ success: false, message: 'Invalid response' }));
         } catch (e) {
             return { success: false, message: 'Network error' };
@@ -72,7 +72,7 @@
         const session = JSON.parse(localStorage.getItem('eloncred_session') || 'null');
         if (session && session.token) {
             try {
-                const res = await fetch(`http://localhost:3000/api/messages/${id}`, {
+                const res = await fetch(`/api/messages/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.token}` },
                     body: JSON.stringify({ admin_response: responseText })
@@ -85,7 +85,7 @@
 
         // Fallback: try cookie-based session
         try {
-            const res = await fetch(`http://localhost:3000/api/messages/${id}`, {
+            const res = await fetch(`/api/messages/${id}`, {
                 method: 'PUT',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },

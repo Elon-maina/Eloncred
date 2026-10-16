@@ -720,6 +720,8 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="messages.js"></script>
     <script>
+        function escapeHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
+
         async function fetchUsers() {
             try {
                 const session = JSON.parse(localStorage.getItem('eloncred_session') || 'null');
@@ -735,13 +737,13 @@
                 (data.users || []).forEach(u => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td>${u.id}</td>
-                        <td>${u.fullname || ''}</td>
-                        <td>${u.email || ''}</td>
-                        <td>${u.phone || ''}</td>
-                        <td>${u.role || (u.is_admin==1?'admin':'user')}</td>
+                        <td>${escapeHtml(u.id)}</td>
+                        <td>${escapeHtml(u.fullname)}</td>
+                        <td>${escapeHtml(u.email)}</td>
+                        <td>${escapeHtml(u.phone)}</td>
+                        <td>${escapeHtml(u.role || (u.is_admin==1?'admin':'user'))}</td>
                         <td>
-                            <button class="btn btn-sm" data-id="${u.id}" data-role="${u.role|| (u.is_admin==1?'admin':'user')}" onclick="toggleRole(event)">${u.role==='admin' || u.is_admin==1 ? 'Revoke Admin' : 'Make Admin'}</button>
+                            <button class="btn btn-sm" data-id="${escapeHtml(u.id)}" data-role="${escapeHtml(u.role|| (u.is_admin==1?'admin':'user'))}" onclick="toggleRole(event)">${u.role==='admin' || u.is_admin==1 ? 'Revoke Admin' : 'Make Admin'}</button>
                         </td>
                     `;
                     tbody.appendChild(tr);

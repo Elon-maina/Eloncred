@@ -207,7 +207,7 @@
             const email = form.querySelector('input[name="email"]').value;
             const password = form.querySelector('input[name="password"]').value;
             try {
-                const resp = await fetch('http://localhost:3000/api/admin/login', {
+                const resp = await fetch('/api/admin/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',

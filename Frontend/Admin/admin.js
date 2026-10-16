@@ -12,6 +12,7 @@
 })();
 
 // Admin page script to add products to localStorage
+function escapeHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
 const ADMIN_PRODUCTS_KEY = 'eloncred_products_v1';
 
 function loadProductsAdmin() {
@@ -42,9 +43,9 @@ document.addEventListener('DOMContentLoaded', function() {
             row.style.gap = '12px';
             row.style.marginBottom = '12px';
             row.innerHTML = `
-                <div style="width:60px;height:40px;background:#fafafa;display:flex;align-items:center;justify-content:center;border-radius:6px;overflow:hidden;">${i.image?'<img src="'+i.image+'" style="width:100%;height:100%;object-fit:cover">':'<i class="fas fa-box"></i>'}</div>
-                <div style="flex:1"><strong>${i.name}</strong><div style="font-size:0.9rem;color:#666">${i.category} • ${i.price}</div></div>
-                <button data-id="${i.id}" class="btn-remove">Remove</button>
+                <div style="width:60px;height:40px;background:#fafafa;display:flex;align-items:center;justify-content:center;border-radius:6px;overflow:hidden;">${i.image?'<img src="'+escapeHtml(i.image)+'" style="width:100%;height:100%;object-fit:cover">':'<i class="fas fa-box"></i>'}</div>
+                <div style="flex:1"><strong>${escapeHtml(i.name)}</strong><div style="font-size:0.9rem;color:#666">${escapeHtml(i.category)} • ${escapeHtml(i.price)}</div></div>
+                <button data-id="${escapeHtml(i.id)}" class="btn-remove">Remove</button>
             `;
             list.appendChild(row);
         });
@@ -55,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Try to sync products from server; if server has no products, localStorage will be cleared to match DB
     async function syncFromServer() {
         try {
-            const resp = await fetch('http://localhost:3000/api/products', { credentials: 'include' });
+            const resp = await fetch('/api/products', { credentials: 'include' });
             if (!resp.ok) throw new Error('Network response not ok');
             const data = await resp.json();
             if (data && data.success && Array.isArray(data.products)) {
@@ -203,7 +204,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 fetchOpts.credentials = 'include';
             }
 
-            const response = await fetch('http://localhost:3000/api/products', fetchOpts);
+            const response = await fetch('/api/products', fetchOpts);
             const result = await response.json();
             if (!result.success) throw new Error(result.message || 'Failed to save to server');
             console.log('Product saved to database:', result.product);
@@ -281,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (session && session.token) {
                     try {
-                        response = await fetch(`http://localhost:3000/api/products/${id}`, {
+                        response = await fetch(`/api/products/${id}`, {
                             method: 'DELETE',
                             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.token}` }
                         });
@@ -294,7 +295,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // If bearer attempt didn't run or failed to produce a response, try cookie-based delete
                 if (!response) {
-                    response = await fetch(`http://localhost:3000/api/products/${id}`, {
+                    response = await fetch(`/api/products/${id}`, {
                         method: 'DELETE',
                         credentials: 'include',
                         headers: { 'Content-Type': 'application/json' }
@@ -369,7 +370,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function loadOrders() {
         try {
-            const response = await fetch('http://localhost:3000/api/orders', { credentials: 'include' });
+            const response = await fetch('/api/orders', { credentials: 'include' });
             if (!response.ok) throw new Error('Network response not ok');
             const result = await response.json();
             if (!result.success) throw new Error(result.message || 'Failed to load orders');
@@ -393,14 +394,14 @@ document.addEventListener('DOMContentLoaded', function() {
             orderEl.innerHTML = `
                 <div class="order-header">
                     <div class="order-info">
-                        <strong>Order #${order.id}</strong>
+                        <strong>Order #${escapeHtml(order.id)}</strong>
                         <div class="order-meta">
-                            ${order.fullname} (${order.email}) • ${new Date(order.created_at).toLocaleDateString()}
+                            ${escapeHtml(order.fullname)} (${escapeHtml(order.email)}) • ${new Date(order.created_at).toLocaleDateString()}
                         </div>
                     </div>
                     <div class="order-status">
-                        <span class="status-${order.status}">${order.status}</span>
-                        <div class="order-total">KSh ${order.total_amount}</div>
+                        <span class="status-${escapeHtml(order.status)}">${escapeHtml(order.status)}</span>
+                        <div class="order-total">KSh ${escapeHtml(order.total_amount)}</div>
                     </div>
                 </div>
             `;
@@ -414,7 +415,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update orders count in stats
     async function updateOrdersCount() {
         try {
-            const response = await fetch('http://localhost:3000/api/orders', { credentials: 'include' });
+            const response = await fetch('/api/orders', { credentials: 'include' });
             if (!response.ok) return;
             const result = await response.json();
             if (result.success) {

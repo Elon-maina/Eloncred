@@ -1,109 +1,105 @@
--- Create database
-CREATE DATABASE IF NOT EXISTS eloncred_db;
+-- ELonCred database schema
+-- Run with: mysql -u root -p < database.sql
+-- Safe to re-run: every table is created only if it does not already exist.
+
+CREATE DATABASE IF NOT EXISTS eloncred_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE eloncred_db;
 
--- Create users table
--- 1) Create new users table (users_new)
-CREATE TABLE IF NOT EXISTS users_new (
+-- Users (customers and admins)
+CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   fullname VARCHAR(150) NOT NULL,
   email VARCHAR(255) NOT NULL UNIQUE,
   phone VARCHAR(50) DEFAULT NULL,
-  password VARCHAR(255) NOT NULL,            -- bcrypt/hash stored here
+  password VARCHAR(255) NOT NULL,            -- bcrypt hash
   role ENUM('user','admin','moderator') NOT NULL DEFAULT 'user',
   is_admin TINYINT(1) AS (role = 'admin') STORED,
-  email_verified TINYINT(1) DEFAULT 0,
-  verification_token VARCHAR(255) DEFAULT NULL,
-  last_login_at DATETIME DEFAULT NULL,
-  failed_login_attempts INT DEFAULT 0,
-  locked_until DATETIME DEFAULT NULL,
-  password_reset_token VARCHAR(255) DEFAULT NULL,
-  password_reset_expires DATETIME DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX idx_email (email),
   INDEX idx_phone (phone),
-  INDEX idx_role (role),
-  INDEX idx_last_login (last_login_at)
+  INDEX idx_role (role)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Create indexes for better performance
-CREATE INDEX idx_email ON users(email);
-CREATE INDEX idx_phone ON users(phone);
-
--- Create products table (for future use)
+-- Products managed from the admin dashboard
 CREATE TABLE IF NOT EXISTS products (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(200) NOT NULL,
-    sku VARCHAR(100) DEFAULT NULL,
-    description TEXT,
-    price DECIMAL(10, 2) NOT NULL,
-    category VARCHAR(100) DEFAULT NULL,
-    image_url VARCHAR(1000) DEFAULT NULL,
-    image_alt VARCHAR(255) DEFAULT NULL,
-    stock_quantity INT DEFAULT 0,
-    is_active TINYINT(1) DEFAULT 1,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FULLTEXT KEY idx_product_fulltext (name, description)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(200) NOT NULL,
+  description TEXT,
+  price DECIMAL(10, 2) NOT NULL,
+  category VARCHAR(100) DEFAULT NULL,
+  image LONGTEXT DEFAULT NULL,               -- URL or base64 data URI
+  stock_quantity INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_category (category),
+  INDEX idx_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Create orders table (for future use)
-CREATE TABLE IF NOT EXISTS orders (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT,
-    total_amount DECIMAL(10, 2) NOT NULL,
-    status ENUM('pending', 'confirmed', 'shipped', 'delivered', 'cancelled') DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-);
-
--- Create messages table for user feedback and admin communication
-CREATE TABLE IF NOT EXISTS messages (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NULL,
-    name VARCHAR(100) NOT NULL,
-    email VARCHAR(100) NOT NULL,
-    subject VARCHAR(200) NOT NULL,
-    message TEXT NOT NULL,
-    status ENUM('unread', 'read', 'responded') DEFAULT 'unread',
-    admin_response TEXT NULL,
-    response_date TIMESTAMP NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-);
-    price DECIMAL(10, 2) NOT NULL,
-    category VARCHAR(100) DEFAULT NULL,
-    image LONGTEXT DEFAULT NULL,
-    stock_quantity INT DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_category (category),
-    INDEX idx_created (created_at)
-);
-
--- Sessions table to track user sessions created on login
+-- Login sessions (bearer tokens issued on login)
 CREATE TABLE IF NOT EXISTS sessions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    token VARCHAR(255) NOT NULL,
-    ip VARCHAR(100) DEFAULT NULL,
-    user_agent VARCHAR(1000) DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    expires_at TIMESTAMP NULL DEFAULT NULL,
-    INDEX idx_token (token),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  session_token VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  expires_at TIMESTAMP NULL DEFAULT NULL,
+  UNIQUE KEY uq_session_token (session_token),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Insert sample products
-INSERT INTO products (name, description, price, category, image_url, stock_quantity) VALUES
-('Premium Laptop', 'High-performance laptop for professionals', 1299.99, 'Electronics', '/images/laptop.jpg', 50),
-('Designer T-Shirt', 'Comfortable and stylish cotton t-shirt', 29.99, 'Fashion', '/images/tshirt.jpg', 100),
-('Smart Home Speaker', 'Voice-controlled smart speaker', 89.99, 'Electronics', '/images/speaker.jpg', 75),
-('Coffee Maker', 'Automatic drip coffee maker', 49.99, 'Home', '/images/coffee-maker.jpg', 30);
+-- Shopping cart
+CREATE TABLE IF NOT EXISTS cart (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  product_id INT NOT NULL,
+  quantity INT NOT NULL DEFAULT 1,
+  total_price DECIMAL(10, 2) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_cart_user_product (user_id, product_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Create database user (run these commands in MySQL separately)
--- CREATE USER 'eloncred_user'@'localhost' IDENTIFIED BY 'secure_password_123';
--- GRANT ALL PRIVILEGES ON eloncred_db.* TO 'eloncred_user'@'localhost';
--- FLUSH PRIVILEGES;
+-- Orders placed at checkout
+CREATE TABLE IF NOT EXISTS orders (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT,
+  total_amount DECIMAL(10, 2) NOT NULL,
+  status ENUM('pending', 'confirmed', 'shipped', 'delivered', 'cancelled') DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS order_items (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  order_id INT NOT NULL,
+  product_id INT,
+  quantity INT NOT NULL,
+  unit_price DECIMAL(10, 2) NOT NULL,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Contact-form messages and admin responses
+CREATE TABLE IF NOT EXISTS messages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NULL,
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  subject VARCHAR(200) NOT NULL,
+  message TEXT NOT NULL,
+  status ENUM('unread', 'read', 'responded') DEFAULT 'unread',
+  admin_response TEXT NULL,
+  response_date TIMESTAMP NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Recommended: run the app as a dedicated, least-privilege MySQL user instead of root.
+-- Pick your own strong password and put the same values in Backend/.env.
+--   CREATE USER 'eloncred_app'@'localhost' IDENTIFIED BY '<choose-a-strong-password>';
+--   GRANT SELECT, INSERT, UPDATE, DELETE ON eloncred_db.* TO 'eloncred_app'@'localhost';
+--   FLUSH PRIVILEGES;
+--
+-- Then create your first admin account:
+--   cd Backend && npm run create-admin -- admin@example.com "<password>" "Admin Name"

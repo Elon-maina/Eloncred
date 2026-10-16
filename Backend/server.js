@@ -19,6 +19,7 @@ const PORT = process.env.PORT || 3000;
 // DATABASE
 // ---------------------
 const pool = require('./db'); // use centralized db.js with mysql2/promise pool
+const { requireUser } = require('./middleware/auth');
 
 // Test DB connection
 (async () => {
@@ -34,28 +35,22 @@ const pool = require('./db'); // use centralized db.js with mysql2/promise pool
 // ---------------------
 // MIDDLEWARE
 // ---------------------
-// Enable CORS and allow credentials so frontend (including iframes) can send cookies when needed.
-app.use(cors({ origin: true, credentials: true }));
+// The frontend is served by this same server, so cross-origin requests are only allowed
+// for origins listed explicitly in CORS_ORIGINS (comma-separated), e.g. a live-server dev URL.
+const allowedOrigins = (process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map(o => o.trim())
+    .filter(Boolean);
+app.use(cors({ origin: allowedOrigins.length ? allowedOrigins : false, credentials: true }));
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 app.use(express.static(path.join(__dirname, '../Frontend')));
 
-
-// Log all DELETE requests
-app.use((req, res, next) => {
-    if (req.method === 'DELETE') {
-        console.log('=== DELETE REQUEST DETECTED ===');
-        console.log('URL:', req.url);
-        console.log('Path:', req.path);
-        console.log('Original URL:', req.originalUrl);
-        console.log('Route:', req.route);
-        console.log('======================');
-    }
-    next();
-});
 // Session middleware
 // Session configuration: 6 hours lifetime, cookie-based sessions
 const SIX_HOURS = 6 * 60 * 60 * 1000;
+const COOKIE_SECURE = process.env.COOKIE_SECURE === 'true';
+if (COOKIE_SECURE) app.set('trust proxy', 1);
 app.use(session({
     name: process.env.SESSION_NAME || 'eloncred_sid',
     secret: process.env.SESSION_SECRET,
@@ -63,7 +58,7 @@ app.use(session({
     saveUninitialized: false,
     rolling: true,
     cookie: {
-        secure: false, // set true when using HTTPS
+        secure: COOKIE_SECURE, // set COOKIE_SECURE=true when served over HTTPS
         httpOnly: true,
         maxAge: SIX_HOURS,
         sameSite: 'lax'
@@ -92,6 +87,11 @@ feedbackRoutes(app, pool);
 const adminRouter = require('./Routes/admin');
 app.use('/api/admin', adminRouter);
 // ---------------------
+// ORDER ROUTES
+// ---------------------
+const ordersRouter = require('./Routes/orders');
+app.use('/api/orders', ordersRouter);
+// ---------------------
 // PASSWORD HELPERS
 // ---------------------
 async function hashPassword(password) {
@@ -103,11 +103,48 @@ async function verifyPassword(raw, hashed) {
 }
 
 // ---------------------
+// LOGIN RATE LIMITING (in-memory, per IP + email)
+// ---------------------
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_MAX_ATTEMPTS = 10;
+const loginAttempts = new Map();
+
+function loginKey(req) {
+    return `${req.ip}|${String(req.body?.email || '').toLowerCase()}`;
+}
+
+function isLoginBlocked(req) {
+    const entry = loginAttempts.get(loginKey(req));
+    if (!entry) return false;
+    if (Date.now() - entry.first > LOGIN_WINDOW_MS) {
+        loginAttempts.delete(loginKey(req));
+        return false;
+    }
+    return entry.count >= LOGIN_MAX_ATTEMPTS;
+}
+
+function recordLoginFailure(req) {
+    const key = loginKey(req);
+    const entry = loginAttempts.get(key);
+    if (!entry || Date.now() - entry.first > LOGIN_WINDOW_MS) {
+        loginAttempts.set(key, { count: 1, first: Date.now() });
+    } else {
+        entry.count++;
+    }
+}
+
+function clearLoginFailures(req) {
+    loginAttempts.delete(loginKey(req));
+}
+
+const TOO_MANY_ATTEMPTS = { success: false, message: 'Too many login attempts. Please try again in 15 minutes.' };
+
+// ---------------------
 // FRONTEND ROUTES
 // ---------------------
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../frontend/home.html')));
-app.get('/login', (req, res) => res.sendFile(path.join(__dirname, '../frontend/login.html')));
-app.get('/signup', (req, res) => res.sendFile(path.join(__dirname, '../frontend/signup.html')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../Frontend/home.html')));
+app.get('/login', (req, res) => res.sendFile(path.join(__dirname, '../Frontend/login.html')));
+app.get('/signup', (req, res) => res.sendFile(path.join(__dirname, '../Frontend/signup.html')));
 
 // ---------------------
 // AUTH APIs
@@ -157,6 +194,8 @@ app.post('/api/login', async (req, res) => {
         return res.json({ success: false, message: 'Email and password required' });
     }
 
+    if (isLoginBlocked(req)) return res.status(429).json(TOO_MANY_ATTEMPTS);
+
     try {
         const [users] = await pool.execute(
             'SELECT * FROM users WHERE email = ?',
@@ -164,21 +203,23 @@ app.post('/api/login', async (req, res) => {
         );
 
         if (users.length === 0) {
+            recordLoginFailure(req);
             return res.json({ success: false, message: 'Invalid credentials' });
         }
 
         const user = users[0];
+        const valid = await verifyPassword(password, user.password);
+
+        if (!valid) {
+            recordLoginFailure(req);
+            return res.json({ success: false, message: 'Invalid credentials' });
+        }
+        clearLoginFailures(req);
 
         // Prevent admin accounts from logging in through the regular user endpoint.
         // Admins must use the admin login page (/api/admin/login) to create an admin session.
         if (user.role && user.role === 'admin') {
             return res.json({ success: false, message: 'Admin accounts must sign in at the admin login page' });
-        }
-
-        const valid = await verifyPassword(password, user.password);
-
-        if (!valid) {
-            return res.json({ success: false, message: 'Invalid credentials' });
         }
 
         const token = crypto.randomBytes(32).toString('hex');
@@ -250,6 +291,8 @@ app.post('/api/admin/login', async (req, res) => {
         return res.json({ success: false, message: 'Email and password required' });
     }
 
+    if (isLoginBlocked(req)) return res.status(429).json(TOO_MANY_ATTEMPTS);
+
     try {
         const [users] = await pool.execute(
             "SELECT * FROM users WHERE email = ? AND role = 'admin'",
@@ -257,6 +300,7 @@ app.post('/api/admin/login', async (req, res) => {
         );
 
         if (users.length === 0) {
+            recordLoginFailure(req);
             return res.json({ success: false, message: 'Invalid admin credentials' });
         }
 
@@ -264,8 +308,10 @@ app.post('/api/admin/login', async (req, res) => {
         const valid = await verifyPassword(password, user.password);
 
         if (!valid) {
+            recordLoginFailure(req);
             return res.json({ success: false, message: 'Invalid admin credentials' });
         }
+        clearLoginFailures(req);
 
         const token = crypto.randomBytes(32).toString('hex');
 
@@ -330,12 +376,20 @@ app.post('/api/logout', async (req, res) => {
             ? req.get('Authorization').split(' ')[1]
             : null);
 
-    if (!token) {
+    const sessionToken = req.session?.sessionToken;
+
+    if (!token && !sessionToken) {
         return res.status(400).json({ success: false, message: 'No token provided' });
     }
 
     try {
-        await pool.execute('DELETE FROM sessions WHERE session_token = ?', [token]);
+        for (const t of new Set([token, sessionToken].filter(Boolean))) {
+            await pool.execute('DELETE FROM sessions WHERE session_token = ?', [t]);
+        }
+        if (req.session) {
+            await new Promise(resolve => req.session.destroy(() => resolve()));
+            res.clearCookie(process.env.SESSION_NAME || 'eloncred_sid');
+        }
         res.json({ success: true, message: 'Logged out successfully' });
     } catch (err) {
         console.error('Logout error:', err);
@@ -346,8 +400,12 @@ app.post('/api/logout', async (req, res) => {
 // ---------------------
 // PROFILE
 // ---------------------
-app.get('/api/profile/:id', async (req, res) => {
+app.get('/api/profile/:id', requireUser, async (req, res) => {
     try {
+        if (Number(req.params.id) !== Number(req.user_id)) {
+            return res.status(403).json({ success: false, message: 'Forbidden' });
+        }
+
         const [users] = await pool.execute(
             'SELECT id, fullname, email, phone, created_at FROM users WHERE id = ?',
             [req.params.id]
@@ -362,6 +420,18 @@ app.get('/api/profile/:id', async (req, res) => {
         console.error('Profile fetch error:', err);
         res.status(500).json({ success: false, message: 'Server error' });
     }
+});
+
+// Return JSON for malformed request bodies and unexpected errors instead of HTML stack traces
+app.use((err, req, res, next) => {
+    if (err.type === 'entity.parse.failed') {
+        return res.status(400).json({ success: false, message: 'Invalid JSON body' });
+    }
+    if (err.type === 'entity.too.large') {
+        return res.status(413).json({ success: false, message: 'Request body too large' });
+    }
+    console.error('Unhandled error:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
 });
 
 // ---------------------

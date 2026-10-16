@@ -1,25 +1,12 @@
 {
   "name": "eloncred-website",
   "version": "1.0.0",
-  "main": "index.js",
+  "private": true,
+  "description": "ELonCred e-commerce site. The Express server in Backend/ also serves the Frontend/ pages.",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "install:backend": "npm --prefix Backend install",
+    "start": "npm --prefix Backend start",
+    "dev": "npm --prefix Backend run dev"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "devDependencies": {
-    "live-server": "^1.2.2"
-  },
-  "dependencies": {
-    "bcryptjs": "^3.0.3",
-    "cors": "^2.8.6",
-    "dotenv": "^17.2.3",
-    "express": "^5.2.1",
-    "express-session": "^1.19.0",
-    "mysql2": "^3.16.2",
-    "nodemailer": "^7.0.13",
-    "nodemon": "^3.1.11"
-  }
+  "license": "ISC"
 }

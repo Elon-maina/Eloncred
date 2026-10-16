@@ -2,42 +2,8 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
+const { requireUser: authenticateUser } = require("../middleware/auth");
 
-/* ===============================
-   AUTH MIDDLEWARE
-   Supports: express-session (server cookie) OR Bearer token in Authorization header
-================================ */
-const authenticateUser = async (req, res, next) => {
-    try {
-        // 1) cookie/session-based auth
-        if (req.session && (req.session.userId || req.session.user)) {
-            req.user_id = req.session.userId || (req.session.user && req.session.user.id);
-            if (req.user_id) return next();
-        }
-
-        // 2) bearer token
-        const authHeader = req.get('Authorization') || '';
-        let token = null;
-        if (authHeader.startsWith('Bearer ')) token = authHeader.slice(7).trim();
-        token = token || req.body?.token || req.query?.token || null;
-
-        if (!token) {
-            return res.status(401).json({ success: false, message: 'Unauthorized. Please log in first.' });
-        }
-
-        // lookup session in DB (token column)
-        const [rows] = await pool.execute('SELECT user_id FROM sessions WHERE session_token = ? AND (expires_at IS NULL OR expires_at > NOW())', [token]);
-        if (!rows || rows.length === 0) {
-            return res.status(401).json({ success: false, message: 'Invalid or expired session token' });
-        }
-
-        req.user_id = rows[0].user_id;
-        return next();
-    } catch (err) {
-        console.error('Auth middleware error:', err);
-        return res.status(500).json({ success: false, message: 'Authentication error' });
-    }
-};
 
 /* ===============================
    GET USER CART
@@ -74,6 +40,7 @@ router.post('/add', authenticateUser, async (req, res) => {
         // normalize inputs
         const pid = Number(product_id);
         const qty = Number(quantity) || 1;
+        if (!Number.isInteger(qty) || qty < 1) return res.status(400).json({ success: false, message: 'Invalid quantity' });
         if (!pid) return res.status(400).json({ success: false, message: 'Invalid product id' });
 
         // check existing cart item
@@ -126,8 +93,8 @@ router.post('/add', authenticateUser, async (req, res) => {
    (increase / decrease / manual)
 ================================ */
 router.put('/update/:id', authenticateUser, async (req, res) => {
-    const { quantity } = req.body;
-    if (!quantity || quantity < 1) {
+    const quantity = Number(req.body.quantity);
+    if (!Number.isInteger(quantity) || quantity < 1) {
         return res.status(400).json({ success: false, message: 'Quantity must be at least 1' });
     }
     try {
