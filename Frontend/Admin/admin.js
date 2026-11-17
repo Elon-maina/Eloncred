@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     name: p.name || '',
                     price: (p.price === undefined || p.price === null) ? '' : String(p.price),
                     category: p.category || '',
-                    image: p.image || '',
+                    image: p.image_url || p.image || '',
                     stock_quantity: p.stock_quantity || 0
                 }));
 

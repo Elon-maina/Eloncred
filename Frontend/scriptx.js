@@ -301,7 +301,7 @@ async function renderProducts() {
         if (!container) return;
 
         container.innerHTML = '';
-        const items = products.filter(p => p.category === cat);
+        const items = products.filter(p => String(p.category || '').toLowerCase() === cat);
 
         if (!items.length) {
             container.innerHTML = '<p>No items yet</p>';
@@ -313,7 +313,7 @@ items.forEach(item => {
     card.className = 'product-card';
     card.innerHTML = `
         <div class="product-media">
-            ${item.image ? `<img src="${item.image}" alt="${item.name}">` : '<i class="fas fa-box"></i>'}
+            ${(item.image_url || item.image) ? `<img src="${item.image_url || item.image}" alt="${item.name}">` : '<i class="fas fa-box"></i>'}
         </div>
         <h3>${item.name}</h3>
         <p>Ksh ${item.price}</p>
@@ -351,7 +351,7 @@ function renderSearchResults(products) {
         if (!container) return;
         container.innerHTML = '';
 
-        const items = products.filter(p => p.category === cat);
+        const items = products.filter(p => String(p.category || '').toLowerCase() === cat);
         if (!items.length) {
             container.innerHTML = '<p>No results</p>';
             return;
@@ -363,7 +363,7 @@ function renderSearchResults(products) {
             const inStock = Number(item.stock_quantity) > 0;
             card.innerHTML = `
                 <div class="product-media">
-                    ${item.image ? `<img src="${item.image}" alt="${item.name}">` : '<i class="fas fa-box"></i>'}
+                    ${(item.image_url || item.image) ? `<img src="${item.image_url || item.image}" alt="${item.name}">` : '<i class="fas fa-box"></i>'}
                 </div>
                 <h3>${item.name}</h3>
                 <p>Ksh ${item.price}</p>

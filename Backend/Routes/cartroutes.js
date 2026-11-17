@@ -18,7 +18,7 @@ router.get('/', authenticateUser, async (req, res) => {
                 c.total_price,
                 p.name,
                 p.price,
-                p.image
+                p.image_url AS image
             FROM cart c
             JOIN products p ON c.product_id = p.id
             WHERE c.user_id = ?
@@ -52,7 +52,7 @@ router.post('/add', authenticateUser, async (req, res) => {
             addedNew = false;
             // fetch current cart rows to return
             const [cartRowsExisting] = await pool.execute(`
-                SELECT c.id, c.product_id, c.quantity, c.total_price, p.name, p.price, p.image
+                SELECT c.id, c.product_id, c.quantity, c.total_price, p.name, p.price, p.image_url AS image
                 FROM cart c
                 JOIN products p ON c.product_id = p.id
                 WHERE c.user_id = ?
@@ -72,7 +72,7 @@ router.post('/add', authenticateUser, async (req, res) => {
 
         // return updated cart for the user
         const [cartRows] = await pool.execute(`
-            SELECT c.id, c.product_id, c.quantity, c.total_price, p.name, p.price, p.image
+            SELECT c.id, c.product_id, c.quantity, c.total_price, p.name, p.price, p.image_url AS image
             FROM cart c
             JOIN products p ON c.product_id = p.id
             WHERE c.user_id = ?
