@@ -92,6 +92,11 @@ app.use('/api/admin', adminRouter);
 const ordersRouter = require('./Routes/orders');
 app.use('/api/orders', ordersRouter);
 // ---------------------
+// M-PESA (DARAJA STK PUSH)
+// ---------------------
+const mpesaRouter = require('./Routes/mpesa');
+app.use('/api/mpesa', mpesaRouter);
+// ---------------------
 // PASSWORD HELPERS
 // ---------------------
 async function hashPassword(password) {

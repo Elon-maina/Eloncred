@@ -86,6 +86,14 @@
                         </div>
                     </div>
 
+                    <div id="mpesaFields" style="display:none;">
+                        <div class="form-group">
+                            <label for="mpesaPhone">M-Pesa phone number</label>
+                            <input id="mpesaPhone" name="mpesaPhone" inputmode="tel" maxlength="16" placeholder="0712 345 678">
+                            <small style="color:#666;">You will get a prompt on this phone to enter your M-Pesa PIN.</small>
+                        </div>
+                    </div>
+
                     <div class="form-group full-width">
                         <button type="submit" class="btn btn-primary btn-full">Pay now</button>
                     </div>
@@ -157,9 +165,90 @@
         // Payment method toggling
         const paymentRadios = document.querySelectorAll('input[name="paymentMethod"]');
         const cardFields = document.getElementById('cardFields');
+        const mpesaFields = document.getElementById('mpesaFields');
         function updatePaymentFields(){
             const v = document.querySelector('input[name="paymentMethod"]:checked').value;
             cardFields.style.display = (v === 'credit') ? 'block' : 'none';
+            mpesaFields.style.display = (v === 'mpesa') ? 'block' : 'none';
+            const mp = document.getElementById('mpesaPhone');
+            if (v === 'mpesa' && mp && !mp.value) mp.value = document.getElementById('phone').value;
+        }
+
+        // Accepts 07.., 01.., +254.., 254..; mirrors the server-side check
+        function validKenyanPhone(p){
+            const d = String(p||'').replace(/\D/g,'');
+            return /^(254|0)?[17]\d{8}$/.test(d);
+        }
+
+        async function api(url, opts){
+            const s = getSession();
+            const res = await fetch(url, Object.assign({}, opts, {
+                headers: Object.assign({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${s.token}` }, (opts||{}).headers)
+            }));
+            let data = {};
+            try { data = await res.json(); } catch (e) {}
+            if (!res.ok || !data.success) throw new Error(data.message || 'Request failed');
+            return data;
+        }
+
+        function showPaid(receipt){
+            Swal.fire({
+                icon:'success',
+                title:'Payment received',
+                html: receipt ? `M-Pesa receipt: <b>${escapeHtml(receipt)}</b>` : 'Thank you for your purchase!'
+            }).then(()=>{
+                localStorage.removeItem(CART_KEY);
+                document.querySelector('.payment-card').style.display='none';
+                document.getElementById('thankYou').style.display='block';
+            });
+        }
+
+        // Create the order, send the STK push, then wait for Safaricom's answer.
+        let pendingOrderId = null;
+        async function payWithMpesa(phone){
+            Swal.fire({title:'Sending M-Pesa request...', didOpen(){ Swal.showLoading() }, allowOutsideClick:false, allowEscapeKey:false});
+            try {
+                if (!pendingOrderId) {
+                    const order = await api('/api/orders', {
+                        method:'POST',
+                        body: JSON.stringify({ items: cart, payment_method: 'mpesa' })
+                    });
+                    pendingOrderId = order.orderId;
+                }
+                const push = await api('/api/mpesa/stkpush', {
+                    method:'POST',
+                    body: JSON.stringify({ orderId: pendingOrderId, phone })
+                });
+
+                let cancelled = false;
+                Swal.fire({
+                    title:'Check your phone',
+                    html:`Enter your M-Pesa PIN to pay <b>KSh ${push.amount}</b>.<br><small>Waiting for confirmation…</small>`,
+                    didOpen(){ Swal.showLoading() },
+                    allowOutsideClick:false,
+                    showCancelButton:true,
+                    showConfirmButton:false,
+                    cancelButtonText:'Close'
+                }).then(r => { if (r.dismiss) cancelled = true; });
+
+                const started = Date.now();
+                while (!cancelled && Date.now() - started < 120000) {
+                    await new Promise(r => setTimeout(r, 3000));
+                    const st = await api(`/api/mpesa/status/${encodeURIComponent(push.checkoutRequestId)}`);
+                    if (st.status === 'paid') { Swal.close(); showPaid(st.receipt); return; }
+                    if (st.status === 'failed') {
+                        Swal.close();
+                        Swal.fire({icon:'error', title:'Payment not completed', text: st.message || 'The M-Pesa payment was cancelled or failed. You can try again.'});
+                        return;
+                    }
+                }
+                if (!cancelled) {
+                    Swal.fire({icon:'info', title:'Still waiting', text:'We have not received confirmation yet. If you paid, your order will update shortly.'});
+                }
+            } catch (err) {
+                Swal.close();
+                Swal.fire({icon:'error', title:'M-Pesa payment failed', text: err.message});
+            }
         }
         paymentRadios.forEach(r=>r.addEventListener('change', updatePaymentFields));
         updatePaymentFields();
@@ -189,6 +278,13 @@
                 const exp = formData.get('ccExp');
                 const cvc = formData.get('ccCvc');
                 if(!cc || !exp || !cvc){ Swal.fire({icon:'error', title:'Card details', text:'Please enter card details.'}); return }
+            }
+
+            if(method === 'mpesa'){
+                const mpPhone = formData.get('mpesaPhone') || phone;
+                if(!validKenyanPhone(mpPhone)){ Swal.fire({icon:'error', title:'M-Pesa number', text:'Enter a valid Safaricom number, e.g. 0712 345 678.'}); return }
+                payWithMpesa(mpPhone);
+                return;
             }
 
             // simulate processing delay

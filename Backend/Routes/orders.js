@@ -27,12 +27,12 @@ router.post('/', requireUser, async (req, res) => {
     const conn = await pool.getConnection();
     try {
         const ids = [...quantities.keys()];
-        const [products] = await conn.query('SELECT id, price FROM products WHERE id IN (?)', [ids]);
+        const [products] = await conn.query('SELECT id, name, price FROM products WHERE id IN (?)', [ids]);
         if (products.length !== ids.length) {
             return res.status(400).json({ success: false, message: 'Some products are no longer available' });
         }
 
-        const lines = products.map(p => ({ product_id: p.id, quantity: quantities.get(p.id), unit_price: Number(p.price) }));
+        const lines = products.map(p => ({ product_id: p.id, product_name: p.name, quantity: quantities.get(p.id), unit_price: Number(p.price) }));
         const total = lines.reduce((sum, l) => sum + l.unit_price * l.quantity, 0);
 
         await conn.beginTransaction();
@@ -42,11 +42,16 @@ router.post('/', requireUser, async (req, res) => {
         );
         for (const l of lines) {
             await conn.execute(
-                'INSERT INTO order_items (order_id, product_id, quantity, unit_price) VALUES (?, ?, ?, ?)',
-                [order.insertId, l.product_id, l.quantity, l.unit_price]
+                `INSERT INTO order_items (order_id, product_id, product_name, quantity, unit_price, line_total)
+                 VALUES (?, ?, ?, ?, ?, ?)`,
+                [order.insertId, l.product_id, l.product_name, l.quantity, l.unit_price, (l.unit_price * l.quantity).toFixed(2)]
             );
         }
-        await conn.execute('DELETE FROM cart WHERE user_id = ?', [req.user_id]);
+        // For M-Pesa the cart is kept until Safaricom confirms the payment (see Routes/mpesa.js),
+        // so a cancelled or failed payment does not empty the customer's cart.
+        if (req.body.payment_method !== 'mpesa') {
+            await conn.execute('DELETE FROM cart WHERE user_id = ?', [req.user_id]);
+        }
         await conn.commit();
 
         res.json({ success: true, message: 'Order created', orderId: order.insertId, total: Number(total.toFixed(2)) });
